@@ -7,13 +7,14 @@
 //
 
 #import <UIKit/UIKit.h>
-
+#import "FYiPhoneBoxDelegateProtocol.h"
 
 @interface FYiPhoneBoxController : UIViewController {
 	UIColor *overlayColor;
 	BOOL alwaysDisplayCloseButton;
 	BOOL neverDisplayCloseButton;
 	BOOL rotateImageToFitScreen;
+	BOOL autoRotateScreen;
 	UIButton *closeButton;
 	CGRect closeButtonFrame;
 
@@ -27,12 +28,16 @@
 	UIView *imageMaskView;
 	
 	BOOL _isVisible;
+	BOOL _isImageVisible;
+	
+	id<FYiPhoneBoxDelegate> delegate;
 }
 
 @property (nonatomic, retain) UIColor *overlayColor;
 @property (nonatomic) BOOL alwaysDisplayCloseButton;
 @property (nonatomic) BOOL neverDisplayCloseButton;
 @property (nonatomic) BOOL rotateImageToFitScreen;
+@property (nonatomic) BOOL autoRotateScreen;
 @property (nonatomic, retain) UIButton *closeButton;
 @property (nonatomic) CGRect closeButtonFrame;
 
@@ -44,6 +49,10 @@
 @property (nonatomic, retain) UIButton *imageButton;
 @property (nonatomic, retain) UIActivityIndicatorView *activityView;
 @property (nonatomic, retain) UIView *imageMaskView;
+
+@property (readonly) UIButton *defaultCloseButton;
+
+@property (nonatomic, assign) id<FYiPhoneBoxDelegate> delegate;
 
 // Public API
 - (id)initWithImageURL:(NSString *)theURL;
@@ -67,7 +76,9 @@
 - (void)hideCloseButton;
 - (void)startImageDisplayAnimation;
 - (void)displayAnimationDidStop:(id)sender;
-- (void)setImageViewBounds;
+- (void)startImageHideAnimation;
+- (void)hideAnimationDidStop:(id)sender;
+- (BOOL)setImageViewBounds;
 - (UIImage *)imageByScalingToFitSize:(CGSize)targetSize baseImage:(UIImage *)baseImage;
 
 @end

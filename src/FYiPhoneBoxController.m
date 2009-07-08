@@ -10,12 +10,15 @@
 
 #define degreesToRadian(x) (M_PI * (x) / 180.0)
 
+#define IPHONEBOX_SHOW_HIDE_ANIMATION_DURATION 0.5
+
 @implementation FYiPhoneBoxController
 
-@synthesize overlayColor, alwaysDisplayCloseButton, neverDisplayCloseButton, rotateImageToFitScreen;
+@synthesize overlayColor, alwaysDisplayCloseButton, neverDisplayCloseButton, rotateImageToFitScreen, autoRotateScreen;
 @synthesize closeButton, closeButtonFrame;
 @synthesize imageURL, connection, imageData, image;
 @synthesize imageView, imageButton, activityView, imageMaskView;
+@synthesize delegate;
 
 - (void)dealloc {
 	[overlayColor release];
@@ -34,10 +37,11 @@
 - (id)init {
 	if (self = [super init]) {
 		// Set default values
-		rotateImageToFitScreen = YES;
+		autoRotateScreen = YES;
+		rotateImageToFitScreen = NO;
 		alwaysDisplayCloseButton = NO;
 		neverDisplayCloseButton = NO;
-		overlayColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.8];
+		overlayColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.95];
 	}
 	return self;
 }
@@ -71,14 +75,19 @@
 	UIView *myView = [[UIView alloc] initWithFrame:[UIScreen mainScreen].applicationFrame];
 	myView.backgroundColor = self.overlayColor;
 	myView.autoresizesSubviews = NO;
+	myView.hidden = YES;
+	myView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
 	self.view = myView;
 	[myView release];
+	
+	_isVisible = NO;
 
 	UIView *myMaskView = [[UIView alloc] initWithFrame:self.view.bounds];
 	myMaskView.backgroundColor = [UIColor clearColor];
 	myMaskView.clipsToBounds = YES;
 	myMaskView.hidden = YES;
 	myMaskView.autoresizesSubviews = NO;
+	myMaskView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	[self.view addSubview:myMaskView];
 	self.imageMaskView = myMaskView;
 	[myMaskView release];
@@ -96,10 +105,10 @@
 	[self.imageMaskView addSubview:myImageButton];
 	self.imageButton = myImageButton;
 	
-	UIActivityIndicatorView *myActivityView = [[UIActivityIndicatorView alloc] init];
-	myActivityView.center = self.view.center;
+	UIActivityIndicatorView *myActivityView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
 	myActivityView.hidden = YES;
 	[self.view addSubview:myActivityView];
+	myActivityView.center = self.view.center;
 	self.activityView = myActivityView;
 	[myActivityView release];
 }
@@ -109,7 +118,12 @@
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
-	return NO;
+	return self.autoRotateScreen;
+}
+
+- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
+	NSLog(@"didRotateFromInterfaceOrientation:...");
+	[self setImageViewBounds];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -133,7 +147,6 @@
 
 - (void)viewDidAppear:(BOOL)animated {
 	[super viewDidAppear:animated];
-	_isVisible = YES;
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -175,11 +188,24 @@
 }
 
 - (void)show {
+	if (_isVisible && _isImageVisible)
+		return;
+
 	self.view.hidden = NO;
+	_isVisible = YES;
+	
+	if (self.image != nil) {
+		[self startImageDisplayAnimation];
+	}
 }
 
 - (void)hide {
-	self.view.hidden = YES;
+	if (!_isVisible)
+		return;
+	
+	if (_isImageVisible) {
+		[self startImageHideAnimation];
+	}
 }
 
 #pragma mark -
@@ -191,9 +217,14 @@
 	}
 	[closeButton release];
 	closeButton = [aButton retain];
+	
+	// Loop through all targets of button, and remove any references to self for event UIControlEventTouchUpInside
 	for (id currTarget in [closeButton allTargets]) {
-		NSLog(@"currTarget:%@", currTarget);
-		// TODO: Verify that we are not a target
+		if (currTarget != self)
+			continue;
+		for (NSString *currAction in [closeButton actionsForTarget:currTarget forControlEvent:UIControlEventTouchUpInside]) {
+			[closeButton removeTarget:self action:@selector(currAction) forControlEvents:UIControlEventTouchUpInside];
+		}
 	}
 	[closeButton addTarget:self action:@selector(clickClose:) forControlEvents:UIControlEventTouchUpInside];
 	self.closeButtonFrame = CGRectZero;
@@ -202,6 +233,16 @@
 - (void)setCloseButtonFrame:(CGRect)aRect {
 	closeButtonFrame = aRect;
 	self.closeButton.frame = closeButtonFrame;
+}
+
+- (UIButton *)defaultCloseButton {
+	// Create a default, simple close button (just an X)
+	UIButton *b = [UIButton buttonWithType:UIButtonTypeCustom];
+	[b setTitle:@" X " forState:UIControlStateNormal];
+	[b setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+	b.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.5];
+	b.titleLabel.font = [UIFont boldSystemFontOfSize:48.0];
+	return b;
 }
 
 #pragma mark -
@@ -249,15 +290,15 @@
 }
 
 - (void)layoutCloseButton {
-	if (self.closeButton == nil)
-		return;
+	if (self.closeButton == nil) {
+		self.closeButton = self.defaultCloseButton;
+	}
 	[self.imageMaskView addSubview:self.closeButton];
 	self.closeButton.hidden = YES;
 	if (self.closeButtonFrame.size.height > 0)
 		return;
 	[closeButton sizeToFit];
 	// Default to top-right corner of image
-	CGRect tmpImageViewFrame = self.imageView.frame;
 	CGRect tmpCloseButtonRect = CGRectMake(self.imageView.frame.origin.x + self.imageView.frame.size.width - closeButton.frame.size.width, self.imageView.frame.origin.y, closeButton.frame.size.width, closeButton.frame.size.height);
 	self.closeButtonFrame = tmpCloseButtonRect;
 }
@@ -280,10 +321,11 @@
 	self.imageMaskView.hidden = NO;
 	
 	[UIView beginAnimations:@"iPhoneBoxDisplayAnimation" context:NULL];
-	[UIView setAnimationDuration:0.5];
+	[UIView setAnimationDuration:IPHONEBOX_SHOW_HIDE_ANIMATION_DURATION];
 	[UIView setAnimationDelegate:self];
 	[UIView setAnimationDidStopSelector:@selector(displayAnimationDidStop:)];
 	self.imageMaskView.bounds = self.view.bounds;
+	_isImageVisible = YES;
 	[UIView commitAnimations];
 }
 
@@ -294,9 +336,37 @@
 	}
 }
 
-- (void)setImageViewBounds {
+- (void)startImageHideAnimation {
+	[self hideCloseButton];
+	
+	[UIView beginAnimations:@"iPhoneBoxHideAnimation" context:NULL];
+	[UIView setAnimationDuration:IPHONEBOX_SHOW_HIDE_ANIMATION_DURATION];
+	[UIView setAnimationDelegate:self];
+	[UIView setAnimationDidStopSelector:@selector(hideAnimationDidStop:)];
+	self.imageMaskView.bounds = CGRectMake(0, self.view.bounds.size.height / 2, self.view.bounds.size.width, 1);
+	_isImageVisible = NO;
+	[UIView commitAnimations];
+}
+
+- (void)hideAnimationDidStop:(id)sender {
+	NSLog(@"hideAnimationDidStop");
+	self.imageMaskView.hidden = YES;
+	self.view.hidden = YES;
+	_isVisible = NO;
+	_isImageVisible = NO;
+	
+	if ([delegate respondsToSelector:@selector(fyiPhoneBoxDidClose:)]) {
+		[delegate fyiPhoneBoxDidClose:self];
+	}
+}
+
+- (BOOL)setImageViewBounds {
 	CGSize imageSize = self.image.size;
 	CGSize viewSize = self.view.bounds.size;
+	
+	self.imageView.image = self.image;
+	if (self.image == nil)
+		return NO;
 	
 	if (imageSize.width > viewSize.width || imageSize.height > viewSize.height) {
 		// Image is too large to fit - needs to be rotated, scaled, or both
@@ -307,25 +377,27 @@
 			if (imageSize.height > viewSize.width || imageSize.width > viewSize.height) {
 				// Still too large - scale image
 				UIImage *newImage = [self imageByScalingToFitSize:CGSizeMake(viewSize.height, viewSize.width) baseImage:self.image];
-				self.image = newImage;
+//				self.image = newImage;
 				self.imageView.image = newImage;
-				imageSize = CGSizeMake(self.image.size.height, self.image.size.width);
+				imageSize = CGSizeMake(newImage.size.height, newImage.size.width);
 			}
 			// Apply rotation transformations
 			self.imageView.transform = CGAffineTransformMakeRotation(degreesToRadian(90.0));
 		} else {
 			// Image orientation is correct; simply scale image
 			UIImage *newImage = [self imageByScalingToFitSize:viewSize baseImage:self.image];
-			self.image = newImage;
+			//self.image = newImage;
 			self.imageView.image = newImage;
 			self.imageView.transform = CGAffineTransformIdentity;
-			imageSize = self.image.size;
+			imageSize = newImage.size;
 		}
 	}
 	
 	// Set new image frame based on image size, and keep it centered
 	CGRect imageRect = CGRectMake((viewSize.width - imageSize.width) / 2, (viewSize.height - imageSize.height) / 2, imageSize.width, imageSize.height);
 	self.imageView.frame = imageRect;
+	
+	return YES;
 }
 
 - (UIImage *)imageByScalingToFitSize:(CGSize)targetSize baseImage:(UIImage *)baseImage {
@@ -357,6 +429,11 @@
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
 	NSLog(@"Error!");
+	if ([delegate respondsToSelector:@selector(fyiPhoneBox:didFailToLoadImageWithURL:)]) {
+		[delegate fyiPhoneBox:self didFailToLoadImageWithURL:self.imageURL];
+	}
+	self.imageURL = nil;
+	self.imageData = nil;
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)theData {
@@ -367,6 +444,7 @@
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)theResponse {
+	// Save response? not necessary yet
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
@@ -377,7 +455,13 @@
 	self.imageView.image = self.image;
 	self.imageData = nil;
 	self.connection = nil;
-	if (_isVisible) {
+	if (self.image == nil) {
+		// Error!
+		if ([delegate respondsToSelector:@selector(fyiPhoneBox:didFailToLoadImageWithURL:)]) {
+			[delegate fyiPhoneBox:self didFailToLoadImageWithURL:self.imageURL];
+		}
+		self.imageURL = nil;
+	} else if (_isVisible) {
 		[self hideLoading];
 		[self startImageDisplayAnimation];
 	}
