@@ -119,10 +119,11 @@
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
-	return self.autoRotateScreen;
+	return self.autoRotateScreen && (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
 }
 
-- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
+- (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation duration:(NSTimeInterval)duration {
+	NSLog(@"willAnimateRotation");
 	[self setImageViewBounds];
 	self.imageMaskView.frame = self.view.bounds;
 	self.imageButton.frame = self.view.bounds;
@@ -298,8 +299,6 @@
 }
 
 - (void)layoutCloseButton {
-	if (self.closeButtonFrame.size.height > 0)
-		return;
 	[closeButton sizeToFit];
 	// Default to top-right corner of image
 	CGRect tmpCloseButtonRect = CGRectMake(self.imageView.frame.origin.x + self.imageView.frame.size.width - closeButton.bounds.size.width, self.imageView.frame.origin.y, closeButton.bounds.size.width, closeButton.bounds.size.height);
@@ -322,6 +321,7 @@
 
 - (void)startImageDisplayAnimation {
 	[self setImageViewBounds];
+	[self layoutCloseButton];
 	
 	// Start with mask as a single-pixel line
 	self.imageMaskView.frame = self.view.bounds;
@@ -489,6 +489,7 @@
 	} else if (_isVisible) {
 		[self hideLoading];
 		[self startImageDisplayAnimation];
+		[self layoutCloseButton];
 	}
 }
 
