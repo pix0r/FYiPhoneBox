@@ -123,7 +123,12 @@
 
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
 	NSLog(@"didRotateFromInterfaceOrientation:...");
+	self.imageMaskView.frame = self.view.frame;
+	self.imageMaskView.bounds = self.view.bounds;
 	[self setImageViewBounds];
+	[self layoutCloseButton];
+	
+	[self debugFrames];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -250,6 +255,7 @@
 
 - (IBAction)clickImage:(id)sender {
 	NSLog(@"clickImage");
+	[self debugFrames];
 	if (self.neverDisplayCloseButton) {
 		[self hide];
 	} else if (!self.alwaysDisplayCloseButton) {
@@ -289,12 +295,15 @@
 	[self.activityView stopAnimating];
 }
 
-- (void)layoutCloseButton {
+- (void)initCloseButton {
 	if (self.closeButton == nil) {
 		self.closeButton = self.defaultCloseButton;
 	}
 	[self.imageMaskView addSubview:self.closeButton];
 	self.closeButton.hidden = YES;
+}
+
+- (void)layoutCloseButton {
 	if (self.closeButtonFrame.size.height > 0)
 		return;
 	[closeButton sizeToFit];
@@ -330,6 +339,8 @@
 }
 
 - (void)displayAnimationDidStop:(id)sender {
+	// Show close button
+	[self initCloseButton];
 	[self layoutCloseButton];
 	if (self.alwaysDisplayCloseButton) {
 		[self showCloseButton];
@@ -337,7 +348,6 @@
 }
 
 - (void)startImageHideAnimation {
-	[self hideCloseButton];
 	
 	[UIView beginAnimations:@"iPhoneBoxHideAnimation" context:NULL];
 	[UIView setAnimationDuration:IPHONEBOX_SHOW_HIDE_ANIMATION_DURATION];
@@ -350,6 +360,7 @@
 
 - (void)hideAnimationDidStop:(id)sender {
 	NSLog(@"hideAnimationDidStop");
+	[self hideCloseButton];
 	self.imageMaskView.hidden = YES;
 	self.view.hidden = YES;
 	_isVisible = NO;
@@ -422,6 +433,16 @@
 	}
 	UIGraphicsEndImageContext();
 	return newImage;
+}
+
+- (void)debugFrames {
+	CGSize actualImageSize = self.image.size;
+	CGRect tmpImageViewFrame = self.imageView.frame;
+	CGRect tmpMaskFrame = self.imageMaskView.frame;
+	CGRect tmpViewFrame = self.view.frame;
+	CGRect tmpImageViewBounds = self.imageView.bounds;
+	CGRect tmpMaskBounds = self.imageMaskView.bounds;
+	CGRect tmpViewBounds = self.view.bounds;
 }
 
 #pragma mark -

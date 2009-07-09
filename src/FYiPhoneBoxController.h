@@ -71,6 +71,7 @@
 - (NSURLConnection *)getConnectionForURL:(NSString *)theURL;
 - (void)showLoading;
 - (void)hideLoading;
+- (void)initCloseButton;
 - (void)layoutCloseButton;
 - (void)showCloseButton;
 - (void)hideCloseButton;
@@ -80,5 +81,6 @@
 - (void)hideAnimationDidStop:(id)sender;
 - (BOOL)setImageViewBounds;
 - (UIImage *)imageByScalingToFitSize:(CGSize)targetSize baseImage:(UIImage *)baseImage;
+- (void)debugFrames;
 
 @end
