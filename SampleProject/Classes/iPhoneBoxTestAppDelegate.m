@@ -15,28 +15,38 @@
 @synthesize window;
 
 
-- (void)applicationDidFinishLaunching:(UIApplication *)application {    
+- (void)applicationDidFinishLaunching:(UIApplication *)application {
 
     // Override point for customization after application launch
     [window makeKeyAndVisible];
 	
-	NSLog(@"Showing iPhoneBoxController");
-	FYiPhoneBoxController *box = [[FYiPhoneBoxController alloc] initWithImageURL:@"http://images.sushipedia.org/Akami.1.large.jpg"];
+	box = [[FYiPhoneBoxController alloc] init];
 	[box viewWillAppear:NO];
 	[window addSubview:box.view];
 	[box viewDidAppear:NO];
 	
+	/*
 	UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
 	[closeButton setTitle:@"Close!" forState:UIControlStateNormal];
+	[closeButton addTarget:self action:@selector(dummySelector:) forControlEvents:UIControlEventValueChanged];
 	box.closeButton = closeButton;
+	 */
 	
 	[FYViewInspector inspectView:window depth:0 path:@""];
 }
 
-
 - (void)dealloc {
     [window release];
-    [super dealloc];
+    [box release];
+	[super dealloc];
+}
+
+- (IBAction)clickImage1:(id)sender {
+	[box showImageWithURL:@"http://images.sushipedia.org/Akami.1.large.jpg"];
+}
+
+- (IBAction)clickImage2:(id)sender {
+	[box showImageWithURL:@"http://images.sushipedia.org/Akami.2.large.jpg"];
 }
 
 

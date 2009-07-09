@@ -8,11 +8,17 @@
 
 #import <UIKit/UIKit.h>
 
+@class FYiPhoneBoxController;
+
 @interface iPhoneBoxTestAppDelegate : NSObject <UIApplicationDelegate> {
     UIWindow *window;
+	FYiPhoneBoxController *box;
 }
 
 @property (nonatomic, retain) IBOutlet UIWindow *window;
+
+- (IBAction)clickImage1:(id)sender;
+- (IBAction)clickImage2:(id)sender;
 
 @end
 
