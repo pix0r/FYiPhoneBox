@@ -9,6 +9,7 @@
 #import "FYiPhoneBoxController.h"
 
 #define degreesToRadian(x) (M_PI * (x) / 180.0)
+#define rectAsString(rect) ([NSString stringWithFormat:@"(x=%g,y=%g,w=%g,h=%g)", rect.origin.x, rect.origin.y, rect.size.width, rect.size.height])
 
 #define IPHONEBOX_SHOW_HIDE_ANIMATION_DURATION 0.5
 
@@ -41,7 +42,7 @@
 		rotateImageToFitScreen = NO;
 		alwaysDisplayCloseButton = NO;
 		neverDisplayCloseButton = NO;
-		overlayColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.95];
+		overlayColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.90];
 	}
 	return self;
 }
@@ -122,13 +123,11 @@
 }
 
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
-	NSLog(@"didRotateFromInterfaceOrientation:...");
-	self.imageMaskView.frame = self.view.frame;
-	self.imageMaskView.bounds = self.view.bounds;
 	[self setImageViewBounds];
+	self.imageMaskView.frame = self.view.bounds;
+	self.imageButton.frame = self.view.bounds;
+	self.closeButtonFrame = CGRectZero;
 	[self layoutCloseButton];
-	
-	[self debugFrames];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -254,8 +253,6 @@
 #pragma mark IBActions
 
 - (IBAction)clickImage:(id)sender {
-	NSLog(@"clickImage");
-	[self debugFrames];
 	if (self.neverDisplayCloseButton) {
 		[self hide];
 	} else if (!self.alwaysDisplayCloseButton) {
@@ -275,7 +272,6 @@
 #pragma mark Private methods
 
 - (NSURLConnection *)getConnectionForURL:(NSString *)theURL {
-	NSLog(@"getConnection");
 	NSURLRequest *req = [NSURLRequest requestWithURL:[NSURL URLWithString:theURL]];
 	if (![NSURLConnection canHandleRequest:req])
 		return nil;
@@ -284,13 +280,11 @@
 }
 
 - (void)showLoading {
-	NSLog(@"showLoading");
 	self.activityView.hidden = NO;
 	[self.activityView startAnimating];
 }
 
 - (void)hideLoading {
-	NSLog(@"hideLoading");
 	self.activityView.hidden = YES;
 	[self.activityView stopAnimating];
 }
@@ -308,16 +302,22 @@
 		return;
 	[closeButton sizeToFit];
 	// Default to top-right corner of image
-	CGRect tmpCloseButtonRect = CGRectMake(self.imageView.frame.origin.x + self.imageView.frame.size.width - closeButton.frame.size.width, self.imageView.frame.origin.y, closeButton.frame.size.width, closeButton.frame.size.height);
+	CGRect tmpCloseButtonRect = CGRectMake(self.imageView.frame.origin.x + self.imageView.frame.size.width - closeButton.bounds.size.width, self.imageView.frame.origin.y, closeButton.bounds.size.width, closeButton.bounds.size.height);
 	self.closeButtonFrame = tmpCloseButtonRect;
 }
 
 - (void)showCloseButton {
+	[UIView beginAnimations:@"closeButtonDisplayAnimation" context:NULL];
+	[UIView setAnimationDuration:IPHONEBOX_SHOW_HIDE_ANIMATION_DURATION];
 	self.closeButton.hidden = NO;
+	[UIView commitAnimations];
 }
 
 - (void)hideCloseButton {
+	[UIView beginAnimations:@"closeButtonHideAnimation" context:NULL];
+	[UIView setAnimationDuration:IPHONEBOX_SHOW_HIDE_ANIMATION_DURATION];
 	self.closeButton.hidden = YES;
+	[UIView commitAnimations];
 }
 
 - (void)startImageDisplayAnimation {
@@ -375,6 +375,8 @@
 	CGSize imageSize = self.image.size;
 	CGSize viewSize = self.view.bounds.size;
 	
+	NSLog(@"view bounds: %@; imageSize=%g,%g", rectAsString(self.view.bounds), imageSize.width, imageSize.height);
+	
 	self.imageView.image = self.image;
 	if (self.image == nil)
 		return NO;
@@ -406,7 +408,9 @@
 	
 	// Set new image frame based on image size, and keep it centered
 	CGRect imageRect = CGRectMake((viewSize.width - imageSize.width) / 2, (viewSize.height - imageSize.height) / 2, imageSize.width, imageSize.height);
+	NSLog(@"New imageRect: %@", rectAsString(imageRect));
 	self.imageView.frame = imageRect;
+	NSLog(@"Set imageView.frame to imageRect");
 	
 	return YES;
 }
@@ -436,13 +440,13 @@
 }
 
 - (void)debugFrames {
-	CGSize actualImageSize = self.image.size;
-	CGRect tmpImageViewFrame = self.imageView.frame;
-	CGRect tmpMaskFrame = self.imageMaskView.frame;
-	CGRect tmpViewFrame = self.view.frame;
-	CGRect tmpImageViewBounds = self.imageView.bounds;
-	CGRect tmpMaskBounds = self.imageMaskView.bounds;
-	CGRect tmpViewBounds = self.view.bounds;
+	NSLog(@"Dumping all frame data...");
+	NSLog(@"  imageViewFrame: \t%@", rectAsString(self.imageView.frame));
+	NSLog(@"  imageMaskFrame: \t%@", rectAsString(self.imageMaskView.frame));
+	NSLog(@"  viewFrame: \t\t%@", rectAsString(self.view.frame));
+	NSLog(@"  imageViewBounds: \t%@", rectAsString(self.imageView.bounds));
+	NSLog(@"  imageMaskBounds: \t%@", rectAsString(self.imageMaskView.bounds));
+	NSLog(@"  viewBounds: \t\t%@", rectAsString(self.view.bounds));
 }
 
 #pragma mark -
