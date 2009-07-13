@@ -210,6 +210,9 @@
 	
 	if (_isImageVisible) {
 		[self startImageHideAnimation];
+	} else {
+		_isVisible = NO;
+		self.view.hidden = YES;
 	}
 }
 
@@ -456,14 +459,21 @@
 	NSLog(@"  viewBounds: \t\t%@", rectAsString(self.view.bounds));
 }
 
+- (void)errorLoadingImage {
+	// Error!
+	NSLog(@"Error loading image!");
+	if ([delegate respondsToSelector:@selector(fyiPhoneBox:didFailToLoadImageWithURL:)]) {
+		[delegate fyiPhoneBox:self didFailToLoadImageWithURL:self.imageURL];
+	}
+	[self hide];
+}
+
 #pragma mark -
 #pragma mark NSURLRequest delegate methods
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
 	NSLog(@"Error!");
-	if ([delegate respondsToSelector:@selector(fyiPhoneBox:didFailToLoadImageWithURL:)]) {
-		[delegate fyiPhoneBox:self didFailToLoadImageWithURL:self.imageURL];
-	}
+	[self errorLoadingImage];
 	self.imageURL = nil;
 	self.imageData = nil;
 }
@@ -488,10 +498,7 @@
 	self.imageData = nil;
 	self.connection = nil;
 	if (self.image == nil) {
-		// Error!
-		if ([delegate respondsToSelector:@selector(fyiPhoneBox:didFailToLoadImageWithURL:)]) {
-			[delegate fyiPhoneBox:self didFailToLoadImageWithURL:self.imageURL];
-		}
+		[self errorLoadingImage];
 		self.imageURL = nil;
 	} else if (_isVisible) {
 		[self hideLoading];

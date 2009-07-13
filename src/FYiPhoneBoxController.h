@@ -82,5 +82,6 @@
 - (BOOL)setImageViewBounds;
 - (UIImage *)imageByScalingToFitSize:(CGSize)targetSize baseImage:(UIImage *)baseImage;
 - (void)debugFrames;
+- (void)errorLoadingImage;
 
 @end
