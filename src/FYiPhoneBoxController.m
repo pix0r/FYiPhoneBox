@@ -63,13 +63,13 @@
 
 /*
  // The designated initializer.  Override if you create the controller programmatically and want to perform customization that is not appropriate for viewDidLoad.
-- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
-    if (self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil]) {
-        // Custom initialization
-    }
-    return self;
-}
-*/
+ - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
+ if (self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil]) {
+ // Custom initialization
+ }
+ return self;
+ }
+ */
 
 - (void)loadView {
 	
@@ -82,7 +82,7 @@
 	[myView release];
 	
 	_isVisible = NO;
-
+	
 	UIView *myMaskView = [[UIView alloc] initWithFrame:self.view.bounds];
 	myMaskView.backgroundColor = [UIColor clearColor];
 	myMaskView.clipsToBounds = YES;
@@ -195,7 +195,7 @@
 - (void)show {
 	if (_isVisible && _isImageVisible)
 		return;
-
+	
 	self.view.hidden = NO;
 	_isVisible = YES;
 	
@@ -246,7 +246,11 @@
 	[b setTitle:@" X " forState:UIControlStateNormal];
 	[b setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
 	b.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.5];
-	b.titleLabel.font = [UIFont boldSystemFontOfSize:48.0];
+	if ([b respondsToSelector:@selector(setTitleLabel:)]) {
+		[b performSelector:@selector(setTitleLabel:) withObject:[UIFont boldSystemFontOfSize:48.0]];
+	} else {
+		[b setFont:[UIFont boldSystemFontOfSize:48.0]];
+	}
 	return b;
 }
 
@@ -273,7 +277,8 @@
 #pragma mark Private methods
 
 - (NSURLConnection *)getConnectionForURL:(NSString *)theURL {
-	NSURLRequest *req = [NSURLRequest requestWithURL:[NSURL URLWithString:theURL]];
+	//NSURLRequest *req = [NSURLRequest requestWithURL:[NSURL URLWithString:theURL]];
+	NSURLRequest *req = [NSURLRequest requestWithURL:[NSURL URLWithString:theURL] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10.0];
 	if (![NSURLConnection canHandleRequest:req])
 		return nil;
 	NSURLConnection *conn = [NSURLConnection connectionWithRequest:req delegate:self];
@@ -390,9 +395,11 @@
 			if (imageSize.height > viewSize.width || imageSize.width > viewSize.height) {
 				// Still too large - scale image
 				UIImage *newImage = [self imageByScalingToFitSize:CGSizeMake(viewSize.height, viewSize.width) baseImage:self.image];
-//				self.image = newImage;
+				//				self.image = newImage;
 				self.imageView.image = newImage;
 				imageSize = CGSizeMake(newImage.size.height, newImage.size.width);
+			} else {
+				imageSize = CGSizeMake(imageSize.height, imageSize.width);
 			}
 			// Apply rotation transformations
 			self.imageView.transform = CGAffineTransformMakeRotation(degreesToRadian(90.0));
