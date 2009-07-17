@@ -414,6 +414,8 @@
 			self.imageView.transform = CGAffineTransformIdentity;
 			imageSize = newImage.size;
 		}
+	} else {
+		self.imageView.transform = CGAffineTransformIdentity;
 	}
 	
 	// Set new image frame based on image size, and keep it centered
