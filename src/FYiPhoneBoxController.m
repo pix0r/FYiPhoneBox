@@ -8,8 +8,13 @@
 
 #import "FYiPhoneBoxController.h"
 
+#ifndef degreesToRadian
 #define degreesToRadian(x) (M_PI * (x) / 180.0)
+#endif
+
+#ifndef rectAsString
 #define rectAsString(rect) ([NSString stringWithFormat:@"(x=%g,y=%g,w=%g,h=%g)", rect.origin.x, rect.origin.y, rect.size.width, rect.size.height])
+#endif
 
 #define IPHONEBOX_SHOW_HIDE_ANIMATION_DURATION 0.5
 
