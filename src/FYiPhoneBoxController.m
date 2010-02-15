@@ -257,7 +257,7 @@
 	if ([b respondsToSelector:@selector(setTitleLabel:)]) {
 		[b performSelector:@selector(setTitleLabel:) withObject:[UIFont boldSystemFontOfSize:48.0]];
 	} else {
-		[b setFont:[UIFont boldSystemFontOfSize:48.0]];
+		[b.titleLabel setFont:[UIFont boldSystemFontOfSize:48.0]];
 	}
 	return b;
 }
