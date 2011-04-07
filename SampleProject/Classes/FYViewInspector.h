@@ -1,10 +1,10 @@
 //
 //  FYViewInspector.h
-//  WolverineApp
 //
 //  Created by Mike Matz on 4/9/09.
-//  Copyright 2009 __MyCompanyName__. All rights reserved.
+//  Copyright 2009 Flying Yeti. All rights reserved.
 //
+//	Credit: http://www.codza.com/custom-uiimagepickercontroller-camera-view
 
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
